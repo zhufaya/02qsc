@@ -11,7 +11,7 @@ echo ==========================================
 echo       Q-SYS 科技风控制系统 一键管理
 echo ==========================================
 echo  1. 启动服务 (前端 + 后端)
-echo  2. 结束服务 (关闭所有进程)
+echo  2. 结束服务 (关闭所有进程和窗口)
 echo  3. 退出脚本
 echo ==========================================
 echo.
@@ -39,8 +39,9 @@ echo [成功] 后端已在后台启动 (PID: %BE_PID%)
 
 echo.
 echo [2/2] 正在启动前端 Vite (端口 5173)...
-start cmd /k "npm run dev"
-echo [提示] 前端控制台已弹出，请勿关闭该黑色窗口。
+rem 【修改点1】给窗口命名为 QSYS_Frontend，并使用 /c 
+start "QSYS_Frontend" cmd /c "npm run dev"
+echo [提示] 前端控制台已弹出。
 
 echo.
 echo ==========================================
@@ -55,9 +56,12 @@ goto MENU
 echo.
 echo 正在停止所有服务...
 call :STOP_BACKEND
-echo [1/2] 正在关闭前端 Vite 进程...
+echo [1/2] 正在关闭前端 Vite 进程及弹出的窗口...
+rem 【修改点2】根据窗口标题精准关闭那个终端黑框
+taskkill /FI "WINDOWTITLE eq QSYS_Frontend*" /T /F >nul 2>&1
+rem 保底机制：杀掉可能残留的 node 进程
 taskkill /F /IM node.exe /T >nul 2>&1
-echo [成功] 服务已全部结束。
+echo [成功] 服务及窗口已全部结束。
 pause
 goto MENU
 

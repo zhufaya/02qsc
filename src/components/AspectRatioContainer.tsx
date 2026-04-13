@@ -34,7 +34,7 @@ const AspectRatioContainer = ({
   }, [targetWidth, targetHeight])
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
+    <div className="w-screen h-screen flex items-center justify-center bg-slate-50 overflow-hidden">
       <div
         className="relative origin-top-left"
         style={{
