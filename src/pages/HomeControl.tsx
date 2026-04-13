@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { motion, useAnimation } from 'framer-motion'
-import { Mic, Wifi, Battery, Settings } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Mic } from 'lucide-react'
 
 const HomeControl = () => {
   const [isRecording, setIsRecording] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
-  const controls = useAnimation()
 
   // 模拟录音计时器
   useEffect(() => {
@@ -22,29 +21,6 @@ const HomeControl = () => {
     }
   }, [isRecording])
 
-  // 控制水流动画转速
-  useEffect(() => {
-    if (isRecording) {
-      controls.start({
-        rotate: 360,
-        transition: {
-          duration: 2,
-          repeat: Infinity,
-          ease: 'linear',
-        }
-      })
-    } else {
-      controls.start({
-        rotate: 360,
-        transition: {
-          duration: 10,
-          repeat: Infinity,
-          ease: 'linear',
-        }
-      })
-    }
-  }, [isRecording, controls])
-
   const handleRecordToggle = async () => {
     const newState = !isRecording
     setIsRecording(newState)
@@ -59,12 +35,9 @@ const HomeControl = () => {
       })
       if (!response.ok) {
         console.error('API 调用失败')
-        // 回滚状态
-        setIsRecording(!newState)
       }
     } catch (error) {
       console.error('网络错误:', error)
-      setIsRecording(!newState)
     }
   }
 
@@ -140,19 +113,6 @@ const HomeControl = () => {
             {new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
-        <div className="flex items-center space-x-5">
-          <div className="flex items-center space-x-2 text-gray-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/90 shadow-sm">
-            <Wifi size={16} />
-            <span className="text-sm">100%</span>
-          </div>
-          <div className="flex items-center space-x-2 text-gray-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/90 shadow-sm">
-            <Battery size={16} />
-            <span className="text-sm">98%</span>
-          </div>
-          <button className="p-2 rounded-xl bg-white/80 backdrop-blur-sm border border-white/90 shadow-sm text-gray-500 hover:text-blue-600 hover:border-blue-200 transition">
-            <Settings size={20} />
-          </button>
-        </div>
       </div>
 
       {/* 主内容区 */}
@@ -171,18 +131,60 @@ const HomeControl = () => {
             animate={{ scale: isRecording ? 1.05 : 1 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
-            {/* 水流外环 - 使用 conic-gradient */}
-            <motion.div
-              className="absolute inset-0 rounded-full p-3"
-              animate={controls}
-              style={{
-                background: isRecording
-                  ? 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6, #3b82f6)'
-                  : 'conic-gradient(from 0deg, #60a5fa, #93c5fd, #60a5fa, #60a5fa)',
-              }}
-            >
-              <div className="w-full h-full rounded-full bg-white/90 backdrop-blur-sm shadow-inner" />
-            </motion.div>
+            {/* 未开启会议状态：水波流动圆环 */}
+            {!isRecording && (
+              <div
+                className="absolute inset-0 rounded-full p-3"
+                style={{
+                  background: 'conic-gradient(from 0deg, rgba(59,130,246,0) 0%, rgba(59,130,246,1) 100%)',
+                  animation: 'spin 10s linear infinite',
+                }}
+              >
+                <div className="w-full h-full rounded-full bg-white/90 backdrop-blur-sm shadow-inner" />
+              </div>
+            )}
+
+            {/* 开启会议状态：三个同心旋转圆环 */}
+            {isRecording && (
+              <>
+                {/* 最外圈 - 顺时针，慢速 */}
+                <div
+                  className="absolute inset-0 rounded-full border-4 border-transparent"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6, #3b82f6)',
+                    animation: 'spin 3s linear infinite',
+                    WebkitMask: 'radial-gradient(circle, transparent 65%, black 66%)',
+                    mask: 'radial-gradient(circle, transparent 65%, black 66%)',
+                  }}
+                />
+                {/* 中间圈 - 逆时针，中速 */}
+                <div
+                  className="absolute inset-8 rounded-full border-4 border-transparent"
+                  style={{
+                    background: 'conic-gradient(from 180deg, #06b6d4, #3b82f6, #06b6d4, #06b6d4)',
+                    animation: 'spin 2s linear infinite reverse',
+                    WebkitMask: 'radial-gradient(circle, transparent 70%, black 71%)',
+                    mask: 'radial-gradient(circle, transparent 70%, black 71%)',
+                  }}
+                />
+                {/* 最内圈 - 顺时针，快速 */}
+                <div
+                  className="absolute inset-16 rounded-full border-4 border-transparent"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6, #3b82f6)',
+                    animation: 'spin 1s linear infinite',
+                    WebkitMask: 'radial-gradient(circle, transparent 75%, black 76%)',
+                    mask: 'radial-gradient(circle, transparent 75%, black 76%)',
+                  }}
+                />
+                {/* 内层光晕 */}
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-cyan-400/20 blur-2xl"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </>
+            )}
 
             {/* 按钮中心 */}
             <div className="absolute inset-12 rounded-full bg-gradient-to-br from-white to-slate-50 shadow-lg flex items-center justify-center border border-white/80">
@@ -200,15 +202,6 @@ const HomeControl = () => {
                 </div>
               )}
             </div>
-
-            {/* 内层光晕 */}
-            {isRecording && (
-              <motion.div
-                className="absolute inset-0 rounded-full bg-cyan-400/20 blur-2xl"
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            )}
           </motion.div>
         </div>
 
@@ -231,10 +224,8 @@ const HomeControl = () => {
 
       {/* 底部提示 */}
       <div className="text-center text-gray-500 text-base mt-10 z-10">
-        <div className="flex items-center justify-center space-x-3">
-          <div className="w-2 h-2 bg-gray-400 rounded-full" />
-          <span>向左滑动进入录音回放界面</span>
-          <div className="w-2 h-2 bg-gray-400 rounded-full" />
+        <div className="flex items-center justify-center space-x-2">
+          <span>← 向左滑动进入录音回放界面</span>
         </div>
       </div>
     </div>

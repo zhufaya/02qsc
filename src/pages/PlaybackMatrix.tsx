@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Download, Upload } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Upload } from 'lucide-react'
 
 // 模拟录音文件数据
 const mockRecordings = [
@@ -18,7 +18,6 @@ const PlaybackMatrix = () => {
   const [volume, setVolume] = useState(80)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [droppedFile, setDroppedFile] = useState<string | null>(null)
-  const progressBarRef = useRef<HTMLDivElement>(null)
 
   // 模拟播放进度
   useEffect(() => {
@@ -95,7 +94,6 @@ const PlaybackMatrix = () => {
       })
     } catch (error) {
       console.error('API 调用失败:', error)
-      setIsPlaying(!newState)
     }
   }
 
@@ -111,14 +109,6 @@ const PlaybackMatrix = () => {
     } catch (error) {
       console.error('API 调用失败:', error)
     }
-  }
-
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!progressBarRef.current) return
-    const rect = progressBarRef.current.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const newProgress = (clickX / rect.width) * 100
-    setProgress(Math.max(0, Math.min(100, newProgress)))
   }
 
   const handleTrackSelect = (index: number) => {
@@ -140,75 +130,70 @@ const PlaybackMatrix = () => {
     setDroppedFile(null)
   }
 
-  const handleDownload = (trackName: string) => {
-    // 模拟下载
-    console.log('下载:', trackName)
-    alert(`开始下载: ${trackName}`)
+  // 格式化进度时间
+  const formatProgressTime = (progressPercent: number, totalDuration: string) => {
+    if (!totalDuration) return '00:00'
+    // 将总时长字符串（如 "03:45"）转换为秒数
+    const [minutes, seconds] = totalDuration.split(':').map(Number)
+    const totalSeconds = minutes * 60 + seconds
+    // 计算当前进度秒数
+    const currentSeconds = Math.floor((progressPercent / 100) * totalSeconds)
+    // 格式化为 mm:ss
+    const currentMinutes = Math.floor(currentSeconds / 60)
+    const currentSecs = currentSeconds % 60
+    return `${currentMinutes.toString().padStart(2, '0')}:${currentSecs.toString().padStart(2, '0')}`
   }
 
+
   return (
-    <div className="relative w-full h-full bg-gradient-to-b from-slate-50 to-white p-8 flex flex-col">
+    <div className="relative w-full h-full bg-gradient-to-b from-slate-50 to-white p-6 flex flex-col overflow-hidden">
       {/* 顶部标题 */}
-      <div className="mb-10">
-        <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
           录音文件回放
         </h1>
-        <p className="text-gray-600 text-lg mt-3">选择或拖拽文件进行播放</p>
+        <p className="text-gray-600 mt-1 text-sm">选择或拖拽文件进行播放</p>
       </div>
 
       {/* 文件区 - 横向排列的现代化卡片 */}
-      <div className="mb-10">
-        <h2 className="text-xl font-semibold text-blue-700 mb-6">录音文件库</h2>
-        <div className="flex space-x-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-transparent">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-blue-700 mb-4">录音文件库</h2>
+        <div className="flex flex-row overflow-x-auto gap-4 pb-4" onPointerDownCapture={(e) => e.stopPropagation()}>
           {mockRecordings.map((rec, index) => (
             <div
               key={rec.id}
               draggable={true}
               onDragStart={(e) => handleDragStart(e, index)}
-              className={`flex-shrink-0 w-72 p-6 rounded-2xl border-2 cursor-pointer transition-all shadow-lg ${currentTrack === index
-                  ? 'border-blue-500 bg-white shadow-blue-200'
-                  : 'border-blue-200 bg-white hover:border-blue-300 hover:shadow-blue-100'
+              className={`flex-shrink-0 w-56 h-40 p-4 rounded-xl border-2 cursor-pointer transition-all ${currentTrack === index
+                  ? 'border-blue-500 bg-white shadow-md'
+                  : 'border-blue-200 bg-white hover:border-blue-300 hover:shadow-sm'
                 }`}
               onClick={() => handleTrackSelect(index)}
             >
               {/* 文件头 */}
-              <div className="flex items-center mb-5">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center shadow-sm">
-                  <Volume2 size={28} className="text-blue-600" />
+              <div className="flex items-center mb-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
+                  <Volume2 size={20} className="text-blue-600" />
                 </div>
-                <div className="ml-4 flex-1">
-                  <div className="font-semibold text-blue-800 truncate text-sm">{rec.name}</div>
-                  <div className="text-xs text-gray-500 mt-1">{rec.date}</div>
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="font-medium text-blue-800 truncate text-xs">{rec.name}</div>
+                  <div className="text-xs text-gray-500 truncate mt-1">{rec.date}</div>
                 </div>
                 {currentTrack === index && (
-                  <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-2" />
                 )}
               </div>
 
               {/* 文件信息 */}
-              <div className="flex justify-between text-sm mb-5">
-                <div className="flex items-center space-x-2">
+              <div className="flex justify-between text-xs mt-4">
+                <div className="flex flex-col">
                   <span className="text-gray-500">时长</span>
-                  <span className="font-mono font-bold text-blue-700">{rec.duration}</span>
+                  <span className="font-mono font-bold text-blue-700 mt-1">{rec.duration}</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col items-end">
                   <span className="text-gray-500">大小</span>
-                  <span className="font-mono font-bold text-blue-700">{rec.size}</span>
+                  <span className="font-mono font-bold text-blue-700 mt-1">{rec.size}</span>
                 </div>
-              </div>
-
-              {/* 操作按钮 */}
-              <div className="flex justify-end">
-                <button
-                  className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition shadow-sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDownload(rec.name)
-                  }}
-                  title="下载"
-                >
-                  <Download size={18} />
-                </button>
               </div>
             </div>
           ))}
@@ -217,123 +202,133 @@ const PlaybackMatrix = () => {
 
       {/* 拖拽播放区 */}
       <div
-        className={`flex-1 mb-10 rounded-3xl border-4 ${isDraggingOver
+        className={`h-32 mb-6 rounded-2xl border-4 ${isDraggingOver
             ? 'border-blue-500 bg-blue-50 shadow-inner'
             : 'border-dashed border-blue-300 bg-white'
-          } transition-all duration-300 flex flex-col items-center justify-center shadow-lg`}
+          } transition-all duration-300 flex flex-col items-center justify-center shadow-md`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         {droppedFile ? (
-          <div className="text-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <Volume2 size={40} className="text-blue-600" />
+          <div className="flex flex-col items-center justify-center p-4">
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center shadow-md">
+                <Volume2 size={20} className="text-blue-600" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-bold text-blue-700">已选择文件</div>
+                <div className="font-mono text-blue-900 text-xs truncate max-w-[200px]">{droppedFile}</div>
+              </div>
             </div>
-            <div className="text-2xl font-bold text-blue-700">已选择文件</div>
-            <div className="font-mono text-blue-900 mt-3 text-lg">{droppedFile}</div>
-            <div className="text-gray-600 mt-4">点击下方按钮开始播放</div>
+            <div className="text-xs text-gray-600">点击下方按钮开始播放</div>
           </div>
         ) : (
-          <div className="text-center">
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center mx-auto mb-8 shadow-lg">
-              <Upload size={48} className="text-blue-500" />
+          <div className="flex flex-col items-center justify-center p-4">
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center shadow-md">
+                <Upload size={20} className="text-blue-500" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-bold text-blue-700">拖拽录音文件至此</div>
+                <div className="text-xs text-gray-600 mt-1">将上方的录音文件拖拽到此区域进行播放</div>
+              </div>
             </div>
-            <div className="text-3xl font-bold text-blue-700">拖拽录音文件至此</div>
-            <div className="text-gray-600 mt-4 text-lg">将上方的录音文件拖拽到此区域进行播放</div>
-            <div className="text-sm text-gray-500 mt-6">或点击文件直接选择</div>
+            <div className="text-xs text-gray-500">或点击文件直接选择</div>
           </div>
         )}
       </div>
 
       {/* 播放控制台 */}
-      <div className="p-8 rounded-2xl bg-white border border-blue-200 shadow-xl">
+      <div className="mt-auto p-4 rounded-2xl bg-white border border-blue-200 shadow-xl">
         {/* 当前播放信息 */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex-1">
-            <div className="font-mono text-xl font-bold text-blue-800 truncate">
+            <div className="font-mono text-lg font-bold text-blue-800 truncate">
               {mockRecordings[currentTrack]?.name || '未选择文件'}
             </div>
-            <div className="text-sm text-gray-600 mt-2">
+            <div className="text-sm text-gray-600 mt-1">
               时长 {mockRecordings[currentTrack]?.duration} • 大小 {mockRecordings[currentTrack]?.size}
             </div>
           </div>
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-3">
-              <Volume2 size={20} className="text-gray-500" />
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Volume2 size={18} className="text-gray-500" />
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={volume}
                 onChange={(e) => setVolume(parseInt(e.target.value))}
-                className="w-36 accent-blue-500"
+                className="w-28 accent-blue-500"
+                onPointerDownCapture={(e) => e.stopPropagation()}
               />
-              <span className="text-sm text-gray-600 w-12">{volume}%</span>
+              <span className="text-xs text-gray-600 w-10">{volume}%</span>
             </div>
           </div>
         </div>
 
-        {/* 进度条 */}
-        <div className="mb-10">
-          <div
-            ref={progressBarRef}
-            className="h-3 w-full bg-gray-200 rounded-full cursor-pointer relative"
-            onClick={handleProgressClick}
-          >
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full relative"
-              style={{ width: `${progress}%` }}
+
+        {/* 控制按钮与进度条 */}
+        <div className="space-y-4">
+          {/* 科技感极简进度条 */}
+          <div className="flex items-center space-x-4">
+            <span className="text-xs text-gray-600 font-mono w-12 text-right">
+              {formatProgressTime(progress, mockRecordings[currentTrack]?.duration)}
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={progress}
+              onChange={(e) => setProgress(parseInt(e.target.value))}
+              className="flex-1 h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-500"
+              onPointerDownCapture={(e) => e.stopPropagation()}
+            />
+            <span className="text-xs text-gray-600 font-mono w-12">
+              {mockRecordings[currentTrack]?.duration || '00:00'}
+            </span>
+          </div>
+
+          {/* 控制按钮 */}
+          <div className="flex items-center justify-center space-x-10">
+            <button
+              className="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition shadow-md hover:shadow-lg"
+              onClick={handlePrev}
+              title="上一首"
             >
-              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 bg-white border-3 border-blue-500 rounded-full shadow-lg" />
-            </div>
+              <SkipBack size={20} />
+            </button>
+            <button
+              className="p-4 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white transition shadow-lg hover:shadow-xl"
+              onClick={handlePlayPause}
+              title={isPlaying ? '暂停' : '播放'}
+            >
+              {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+            </button>
+            <button
+              className="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition shadow-md hover:shadow-lg"
+              onClick={handleStop}
+              title="停止"
+            >
+              <Square size={20} />
+            </button>
+            <button
+              className="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition shadow-md hover:shadow-lg"
+              onClick={handleNext}
+              title="下一首"
+            >
+              <SkipForward size={20} />
+            </button>
           </div>
-          <div className="flex justify-between text-sm text-gray-600 mt-3">
-            <span>{Math.floor((progress / 100) * 225)} 秒</span>
-            <span>{mockRecordings[currentTrack]?.duration}</span>
-          </div>
-        </div>
-
-        {/* 控制按钮 */}
-        <div className="flex items-center justify-center space-x-16">
-          <button
-            className="p-5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition shadow-lg hover:shadow-xl"
-            onClick={handlePrev}
-            title="上一首"
-          >
-            <SkipBack size={24} />
-          </button>
-          <button
-            className="p-6 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white transition shadow-2xl hover:shadow-3xl"
-            onClick={handlePlayPause}
-            title={isPlaying ? '暂停' : '播放'}
-          >
-            {isPlaying ? <Pause size={32} /> : <Play size={32} />}
-          </button>
-          <button
-            className="p-5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition shadow-lg hover:shadow-xl"
-            onClick={handleStop}
-            title="停止"
-          >
-            <Square size={24} />
-          </button>
-          <button
-            className="p-5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 transition shadow-lg hover:shadow-xl"
-            onClick={handleNext}
-            title="下一首"
-          >
-            <SkipForward size={24} />
-          </button>
         </div>
       </div>
 
       {/* 底部提示 */}
-      <div className="text-center text-gray-500 text-base mt-10">
-        <div className="flex items-center justify-center space-x-3">
-          <div className="w-2 h-2 bg-gray-400 rounded-full" />
-          <span>向右滑动返回会议控制中心</span>
-          <div className="w-2 h-2 bg-gray-400 rounded-full" />
+      <div className="text-center text-gray-500 text-sm mt-6">
+        <div className="flex items-center justify-center space-x-2">
+          <span>→ 向右滑动返回会议控制中心</span>
         </div>
       </div>
     </div>
