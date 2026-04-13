@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Play, Pause, Stop, SkipBack, SkipForward, Volume2, Download } from 'lucide-react'
+import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Download } from 'lucide-react';
 
 // 模拟录音文件数据
 const mockRecordings = [
@@ -20,7 +20,7 @@ const PlaybackMatrix = () => {
 
   // 模拟播放进度
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
+    let interval: number | null = null
     if (isPlaying) {
       interval = setInterval(() => {
         setProgress((prev) => {
@@ -236,7 +236,7 @@ const PlaybackMatrix = () => {
             onClick={handleStop}
             title="停止"
           >
-            <Stop size={20} />
+            <Square size={20} />
           </button>
           <button
             className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-cyan-300 transition"

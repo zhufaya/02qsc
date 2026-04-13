@@ -8,7 +8,7 @@ const HomeControl = () => {
 
   // 模拟录音计时器
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
+    let interval: number | null = null
     if (isRecording) {
       interval = setInterval(() => {
         setElapsedTime((prev) => prev + 1)

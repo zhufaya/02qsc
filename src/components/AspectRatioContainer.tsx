@@ -11,10 +11,9 @@ const AspectRatioContainer = ({
   children,
   targetWidth = 1280,
   targetHeight = 800,
-  aspectRatio = '16/10',
+  aspectRatio: _aspectRatio = '16/10',
 }: AspectRatioContainerProps) => {
   const [scale, setScale] = useState(1)
-  const [containerSize, setContainerSize] = useState({ width: targetWidth, height: targetHeight })
 
   useEffect(() => {
     const updateScale = () => {
@@ -26,12 +25,7 @@ const AspectRatioContainer = ({
       const scaleY = windowHeight / targetHeight
       const newScale = Math.min(scaleX, scaleY)
 
-      // 计算缩放后的容器尺寸
-      const newWidth = targetWidth * newScale
-      const newHeight = targetHeight * newScale
-
       setScale(newScale)
-      setContainerSize({ width: newWidth, height: newHeight })
     }
 
     updateScale()

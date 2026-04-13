@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 
 interface ConcentricCirclesProps {
   isRecording: boolean
@@ -7,18 +6,6 @@ interface ConcentricCirclesProps {
 }
 
 const ConcentricCircles = ({ isRecording, elapsedTime, onClick }: ConcentricCirclesProps) => {
-  const [rotation, setRotation] = useState(0)
-
-  useEffect(() => {
-    if (!isRecording) {
-      setRotation(0)
-      return
-    }
-    const interval = setInterval(() => {
-      setRotation((prev) => (prev + 1) % 360)
-    }, 50)
-    return () => clearInterval(interval)
-  }, [isRecording])
 
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600)

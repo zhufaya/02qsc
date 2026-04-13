@@ -7,7 +7,7 @@ import AspectRatioContainer from './components/AspectRatioContainer'
 function App() {
   const [page, setPage] = useState(0) // 0: HomeControl, 1: PlaybackMatrix
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100
     if (info.offset.x < -threshold) {
       // 向左滑动，切换到页面1
