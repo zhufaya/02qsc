@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Mic } from 'lucide-react'
 
+const API_BASE_URL = 'http://localhost:8000'
+
 const HomeControl = () => {
   const [isRecording, setIsRecording] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
@@ -23,21 +25,23 @@ const HomeControl = () => {
 
   const handleRecordToggle = async () => {
     const newState = !isRecording
-    setIsRecording(newState)
 
     // 调用后端 API（模拟）
     try {
-      const endpoint = newState ? '/api/record/start' : '/api/record/stop'
+      const endpoint = newState ? `${API_BASE_URL}/api/record/start` : `${API_BASE_URL}/api/record/stop`
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ timestamp: Date.now() }),
       })
-      if (!response.ok) {
-        console.error('API 调用失败')
+      if (response.ok) {
+        setIsRecording(newState)
+      } else {
+        alert('硬件连接失败或服务器离线，请检查 Q-SYS 设备连接状态')
       }
     } catch (error) {
       console.error('网络错误:', error)
+      alert('网络连接失败，请检查服务器是否在线')
     }
   }
 
@@ -136,8 +140,8 @@ const HomeControl = () => {
               <div
                 className="absolute inset-0 rounded-full p-3"
                 style={{
-                  background: 'conic-gradient(from 0deg, rgba(59,130,246,0) 0%, rgba(59,130,246,1) 100%)',
-                  animation: 'spin 10s linear infinite',
+                  background: 'conic-gradient(from 0deg, #3b82f6 0%, #06b6d4 50%, rgba(59,130,246,0) 100%)',
+                  animation: 'spin 15s linear infinite',
                 }}
               >
                 <div className="w-full h-full rounded-full bg-white/90 backdrop-blur-sm shadow-inner" />
@@ -151,8 +155,8 @@ const HomeControl = () => {
                 <div
                   className="absolute inset-0 rounded-full border-4 border-transparent"
                   style={{
-                    background: 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6, #3b82f6)',
-                    animation: 'spin 3s linear infinite',
+                    background: 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6)',
+                    animation: 'spin 4s linear infinite',
                     WebkitMask: 'radial-gradient(circle, transparent 65%, black 66%)',
                     mask: 'radial-gradient(circle, transparent 65%, black 66%)',
                   }}
@@ -161,8 +165,8 @@ const HomeControl = () => {
                 <div
                   className="absolute inset-8 rounded-full border-4 border-transparent"
                   style={{
-                    background: 'conic-gradient(from 180deg, #06b6d4, #3b82f6, #06b6d4, #06b6d4)',
-                    animation: 'spin 2s linear infinite reverse',
+                    background: 'conic-gradient(from 180deg, #06b6d4, #3b82f6, #06b6d4)',
+                    animation: 'spin 2.5s linear infinite reverse',
                     WebkitMask: 'radial-gradient(circle, transparent 70%, black 71%)',
                     mask: 'radial-gradient(circle, transparent 70%, black 71%)',
                   }}
@@ -171,8 +175,8 @@ const HomeControl = () => {
                 <div
                   className="absolute inset-16 rounded-full border-4 border-transparent"
                   style={{
-                    background: 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6, #3b82f6)',
-                    animation: 'spin 1s linear infinite',
+                    background: 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6)',
+                    animation: 'spin 1.2s linear infinite',
                     WebkitMask: 'radial-gradient(circle, transparent 75%, black 76%)',
                     mask: 'radial-gradient(circle, transparent 75%, black 76%)',
                   }}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Upload } from 'lucide-react'
 
+const API_BASE_URL = 'http://localhost:8000'
+
 // 模拟录音文件数据
 const mockRecordings = [
   { id: 1, name: 'recording_2026-04-13_10-02-59_1.wav', duration: '03:45', size: '12.4 MB', date: '2026-04-13 10:02' },
@@ -57,57 +59,72 @@ const PlaybackMatrix = () => {
     setIsDraggingOver(false)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDraggingOver(false)
     const index = parseInt(e.dataTransfer.getData('text/plain'))
     if (!isNaN(index)) {
-      setCurrentTrack(index)
-      setProgress(0)
-      setIsPlaying(false)
-      setDroppedFile(mockRecordings[index].name)
-
-      // 调用后端 API（模拟）
       try {
-        fetch('/api/playback/load', {
+        const response = await fetch(`${API_BASE_URL}/api/playback/play`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ trackId: mockRecordings[index].id }),
+          body: JSON.stringify({ filename: mockRecordings[index].name }),
         })
+        if (response.ok) {
+          setCurrentTrack(index)
+          setProgress(0)
+          setIsPlaying(true)
+          setDroppedFile(mockRecordings[index].name)
+        } else {
+          alert('播放文件失败，请检查设备连接')
+        }
       } catch (error) {
         console.error('API 调用失败:', error)
+        alert('网络连接失败，请检查服务器是否在线')
       }
     }
   }
 
   const handlePlayPause = async () => {
     const newState = !isPlaying
-    setIsPlaying(newState)
 
-    // 调用后端 API（模拟）
     try {
-      const endpoint = newState ? '/api/playback/play' : '/api/playback/pause'
-      await fetch(endpoint, {
+      const endpoint = newState ? `${API_BASE_URL}/api/playback/play` : `${API_BASE_URL}/api/playback/stop`
+      const body = newState
+        ? JSON.stringify({ filename: mockRecordings[currentTrack].name })
+        : JSON.stringify({})
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId: mockRecordings[currentTrack].id }),
+        body,
       })
+      if (response.ok) {
+        setIsPlaying(newState)
+      } else {
+        alert('播放控制失败，请检查设备连接')
+      }
     } catch (error) {
       console.error('API 调用失败:', error)
+      alert('网络连接失败，请检查服务器是否在线')
     }
   }
 
   const handleStop = async () => {
-    setIsPlaying(false)
-    setProgress(0)
     try {
-      await fetch('/api/playback/stop', {
+      const response = await fetch(`${API_BASE_URL}/api/playback/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackId: mockRecordings[currentTrack].id }),
+        body: JSON.stringify({}),
       })
+      if (response.ok) {
+        setIsPlaying(false)
+        setProgress(0)
+      } else {
+        alert('停止播放失败，请检查设备连接')
+      }
     } catch (error) {
       console.error('API 调用失败:', error)
+      alert('网络连接失败，请检查服务器是否在线')
     }
   }
 
@@ -148,15 +165,15 @@ const PlaybackMatrix = () => {
   return (
     <div className="relative w-full h-full bg-gradient-to-b from-slate-50 to-white p-6 flex flex-col overflow-hidden">
       {/* 顶部标题 */}
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
+      <div className="mb-2">
+        <h1 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
           录音文件回放
         </h1>
         <p className="text-gray-600 mt-1 text-sm">选择或拖拽文件进行播放</p>
       </div>
 
       {/* 文件区 - 横向排列的现代化卡片 */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h2 className="text-lg font-semibold text-blue-700 mb-4">录音文件库</h2>
         <div className="flex flex-row overflow-x-auto gap-4 pb-4" onPointerDownCapture={(e) => e.stopPropagation()}>
           {mockRecordings.map((rec, index) => (
@@ -164,6 +181,7 @@ const PlaybackMatrix = () => {
               key={rec.id}
               draggable={true}
               onDragStart={(e) => handleDragStart(e, index)}
+              onPointerDownCapture={(e) => e.stopPropagation()}
               className={`flex-shrink-0 w-56 h-40 p-4 rounded-xl border-2 cursor-pointer transition-all ${currentTrack === index
                   ? 'border-blue-500 bg-white shadow-md'
                   : 'border-blue-200 bg-white hover:border-blue-300 hover:shadow-sm'
@@ -202,7 +220,7 @@ const PlaybackMatrix = () => {
 
       {/* 拖拽播放区 */}
       <div
-        className={`h-32 mb-6 rounded-2xl border-4 ${isDraggingOver
+        className={`h-28 mb-4 rounded-2xl border-4 ${isDraggingOver
             ? 'border-blue-500 bg-blue-50 shadow-inner'
             : 'border-dashed border-blue-300 bg-white'
           } transition-all duration-300 flex flex-col items-center justify-center shadow-md`}
@@ -210,6 +228,7 @@ const PlaybackMatrix = () => {
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onPointerDownCapture={(e) => e.stopPropagation()}
       >
         {droppedFile ? (
           <div className="flex flex-col items-center justify-center p-4">
@@ -241,7 +260,7 @@ const PlaybackMatrix = () => {
       </div>
 
       {/* 播放控制台 */}
-      <div className="mt-auto p-4 rounded-2xl bg-white border border-blue-200 shadow-xl">
+      <div className="mt-auto p-4 rounded-2xl bg-white border border-blue-200 shadow-xl" onPointerDownCapture={(e) => e.stopPropagation()}>
         {/* 当前播放信息 */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex-1">
@@ -326,7 +345,7 @@ const PlaybackMatrix = () => {
       </div>
 
       {/* 底部提示 */}
-      <div className="text-center text-gray-500 text-sm mt-6">
+      <div className="text-center text-gray-500 text-sm mt-4">
         <div className="flex items-center justify-center space-x-2">
           <span>→ 向右滑动返回会议控制中心</span>
         </div>

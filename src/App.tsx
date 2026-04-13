@@ -9,7 +9,7 @@ function App() {
   const [direction, setDirection] = useState(0) // -1: 向左, 1: 向右
 
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 200 // 屏幕宽度的 1/4
+    const threshold = 150 // 滑动触发阈值（像素）
     if (info.offset.x < -threshold) {
       // 向左滑动，切换到页面1（下一页）
       setDirection(1) // 正值表示切换到下一页
