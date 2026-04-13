@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useAnimation } from 'framer-motion'
 import { Mic, Wifi, Battery, Settings } from 'lucide-react'
 
 const HomeControl = () => {
   const [isRecording, setIsRecording] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
+  const controls = useAnimation()
 
   // 模拟录音计时器
   useEffect(() => {
@@ -20,6 +21,29 @@ const HomeControl = () => {
       if (interval) clearInterval(interval)
     }
   }, [isRecording])
+
+  // 控制水流动画转速
+  useEffect(() => {
+    if (isRecording) {
+      controls.start({
+        rotate: 360,
+        transition: {
+          duration: 2,
+          repeat: Infinity,
+          ease: 'linear',
+        }
+      })
+    } else {
+      controls.start({
+        rotate: 360,
+        transition: {
+          duration: 10,
+          repeat: Infinity,
+          ease: 'linear',
+        }
+      })
+    }
+  }, [isRecording, controls])
 
   const handleRecordToggle = async () => {
     const newState = !isRecording
@@ -51,135 +75,128 @@ const HomeControl = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   }
 
-  // 水流动画颜色配置
-  const waterGradient = isRecording
-    ? 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6)' // 亮蓝+青色
-    : 'conic-gradient(from 0deg, #60a5fa, #93c5fd, #60a5fa)' // 单色蓝
-
   return (
-    <div className="relative w-full h-full bg-gradient-to-b from-blue-50 to-white p-6 flex flex-col overflow-hidden">
+    <div className="relative w-full h-full bg-gradient-to-b from-slate-50 to-white p-8 flex flex-col overflow-hidden">
       {/* 背景光晕 */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute w-96 h-96 rounded-full bg-blue-400/20 blur-3xl"
+          className="absolute w-[500px] h-[500px] rounded-full bg-blue-300/30 blur-[100px]"
           animate={{
-            x: [0, 30, -20, 10, 0],
-            y: [0, -20, 30, -10, 0],
+            x: [0, 40, -30, 20, 0],
+            y: [0, -30, 40, -20, 0],
             scale: [1, 1.1, 0.95, 1.05, 1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          style={{ top: '10%', left: '10%' }}
-        />
-        <motion.div
-          className="absolute w-80 h-80 rounded-full bg-cyan-400/15 blur-3xl"
-          animate={{
-            x: [0, -40, 20, -30, 0],
-            y: [0, 30, -20, 40, 0],
-            scale: [1, 0.9, 1.2, 0.8, 1],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-          style={{ top: '60%', right: '15%' }}
-        />
-        <motion.div
-          className="absolute w-72 h-72 rounded-full bg-blue-300/10 blur-3xl"
-          animate={{
-            x: [0, 50, -30, 20, 0],
-            y: [0, -40, 30, -20, 0],
-            scale: [1, 1.15, 0.85, 1.1, 1],
           }}
           transition={{
             duration: 12,
             repeat: Infinity,
             ease: "easeInOut",
+          }}
+          style={{ top: '10%', left: '5%' }}
+        />
+        <motion.div
+          className="absolute w-[450px] h-[450px] rounded-full bg-cyan-300/30 blur-[100px]"
+          animate={{
+            x: [0, -50, 30, -40, 0],
+            y: [0, 40, -30, 50, 0],
+            scale: [1, 0.9, 1.2, 0.85, 1],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
             delay: 2,
           }}
-          style={{ bottom: '20%', left: '20%' }}
+          style={{ top: '50%', right: '10%' }}
+        />
+        <motion.div
+          className="absolute w-[400px] h-[400px] rounded-full bg-blue-400/20 blur-[100px]"
+          animate={{
+            x: [0, 60, -40, 30, 0],
+            y: [0, -50, 40, -30, 0],
+            scale: [1, 1.15, 0.85, 1.1, 1],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 4,
+          }}
+          style={{ bottom: '15%', left: '15%' }}
         />
       </div>
 
       {/* 顶部状态栏 */}
-      <div className="flex justify-between items-center mb-8 z-10">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-blue-600">
-            <Mic size={16} />
-            <span className="text-sm font-medium">Q-SYS 会议系统</span>
+      <div className="flex justify-between items-center mb-10 z-10">
+        <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-3 text-blue-600">
+            <div className="p-2 rounded-xl bg-white/80 backdrop-blur-sm border border-white/90 shadow-sm">
+              <Mic size={20} />
+            </div>
+            <span className="text-lg font-semibold">Q-SYS 会议系统</span>
           </div>
-          <div className="h-4 w-px bg-gray-300" />
-          <div className="text-xs text-gray-600 font-mono">
+          <div className="h-5 w-px bg-gray-300" />
+          <div className="text-sm text-gray-700 font-mono bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/90 shadow-sm">
             {new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })}{' '}
             {new Date().toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' })}
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1 text-gray-500">
-            <Wifi size={14} />
-            <span className="text-xs">100%</span>
+        <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-2 text-gray-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/90 shadow-sm">
+            <Wifi size={16} />
+            <span className="text-sm">100%</span>
           </div>
-          <div className="flex items-center space-x-1 text-gray-500">
-            <Battery size={14} />
-            <span className="text-xs">98%</span>
+          <div className="flex items-center space-x-2 text-gray-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/90 shadow-sm">
+            <Battery size={16} />
+            <span className="text-sm">98%</span>
           </div>
-          <button className="text-gray-400 hover:text-blue-500 transition">
-            <Settings size={18} />
+          <button className="p-2 rounded-xl bg-white/80 backdrop-blur-sm border border-white/90 shadow-sm text-gray-500 hover:text-blue-600 hover:border-blue-200 transition">
+            <Settings size={20} />
           </button>
         </div>
       </div>
 
       {/* 主内容区 */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 mb-3">
+        <div className="mb-14 text-center">
+          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 mb-4">
             会议控制中心
           </h1>
-          <p className="text-gray-500">点击下方按钮开始或结束会议</p>
+          <p className="text-gray-600 text-lg">点击下方按钮开始或结束会议录音</p>
         </div>
 
-        {/* 水流动态会议按钮 */}
+        {/* 水流动效按钮 */}
         <div className="relative" onClick={handleRecordToggle}>
           <motion.div
-            className="relative w-72 h-72 rounded-full flex items-center justify-center cursor-pointer"
+            className="relative w-80 h-80 rounded-full flex items-center justify-center cursor-pointer"
             animate={{ scale: isRecording ? 1.05 : 1 }}
             transition={{ type: 'spring', stiffness: 300 }}
           >
-            {/* 水流外环 */}
+            {/* 水流外环 - 使用 conic-gradient */}
             <motion.div
-              className="absolute inset-0 rounded-full"
+              className="absolute inset-0 rounded-full p-3"
+              animate={controls}
               style={{
-                background: waterGradient,
-                padding: '8px',
-              }}
-              animate={{ rotate: isRecording ? 360 : 0 }}
-              transition={{
-                duration: isRecording ? 1 : 3,
-                repeat: Infinity,
-                ease: 'linear',
+                background: isRecording
+                  ? 'conic-gradient(from 0deg, #3b82f6, #06b6d4, #3b82f6, #3b82f6)'
+                  : 'conic-gradient(from 0deg, #60a5fa, #93c5fd, #60a5fa, #60a5fa)',
               }}
             >
-              <div className="w-full h-full rounded-full bg-white" />
+              <div className="w-full h-full rounded-full bg-white/90 backdrop-blur-sm shadow-inner" />
             </motion.div>
 
             {/* 按钮中心 */}
-            <div className="absolute inset-8 rounded-full bg-gradient-to-br from-blue-50 to-white shadow-lg flex items-center justify-center">
+            <div className="absolute inset-12 rounded-full bg-gradient-to-br from-white to-slate-50 shadow-lg flex items-center justify-center border border-white/80">
               {isRecording ? (
                 <div className="text-center">
-                  <div className="text-4xl font-mono font-bold text-blue-600 tracking-wider">
+                  <div className="text-5xl font-mono font-bold text-blue-600 tracking-wider">
                     {formatTime(elapsedTime)}
                   </div>
-                  <div className="text-sm text-cyan-500 mt-2">会议进行中</div>
+                  <div className="text-lg text-cyan-500 mt-4 font-medium">录音进行中</div>
                 </div>
               ) : (
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-500">开始会议</div>
-                  <div className="text-sm text-gray-400 mt-2">点击启动录音</div>
+                  <div className="text-4xl font-bold text-blue-500">准备就绪</div>
+                  <div className="text-gray-500 mt-4">点击开始录音</div>
                 </div>
               )}
             </div>
@@ -187,8 +204,8 @@ const HomeControl = () => {
             {/* 内层光晕 */}
             {isRecording && (
               <motion.div
-                className="absolute inset-0 rounded-full bg-cyan-400/20 blur-xl"
-                animate={{ scale: [1, 1.2, 1] }}
+                className="absolute inset-0 rounded-full bg-cyan-400/20 blur-2xl"
+                animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
             )}
@@ -196,28 +213,28 @@ const HomeControl = () => {
         </div>
 
         {/* 状态指示器 */}
-        <div className="mt-12 flex items-center space-x-8">
+        <div className="mt-16 flex items-center space-x-12">
           <div className="flex flex-col items-center">
-            <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
-            <span className="text-xs text-gray-600 mt-1">会议状态</span>
+            <div className={`w-4 h-4 rounded-full ${isRecording ? 'bg-green-500 animate-pulse' : 'bg-gray-300'} mb-2`} />
+            <span className="text-sm text-gray-700">会议状态</span>
           </div>
           <div className="flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <span className="text-xs text-gray-600 mt-1">系统在线</span>
+            <div className="w-4 h-4 rounded-full bg-blue-500 mb-2" />
+            <span className="text-sm text-gray-700">系统在线</span>
           </div>
           <div className="flex flex-col items-center">
-            <div className="w-3 h-3 rounded-full bg-cyan-400" />
-            <span className="text-xs text-gray-600 mt-1">存储正常</span>
+            <div className="w-4 h-4 rounded-full bg-cyan-400 mb-2" />
+            <span className="text-sm text-gray-700">存储正常</span>
           </div>
         </div>
       </div>
 
       {/* 底部提示 */}
-      <div className="text-center text-gray-500 text-sm mt-8 z-10">
-        <div className="flex items-center justify-center space-x-2">
-          <div className="w-1 h-1 bg-gray-400 rounded-full" />
+      <div className="text-center text-gray-500 text-base mt-10 z-10">
+        <div className="flex items-center justify-center space-x-3">
+          <div className="w-2 h-2 bg-gray-400 rounded-full" />
           <span>向左滑动进入录音回放界面</span>
-          <div className="w-1 h-1 bg-gray-400 rounded-full" />
+          <div className="w-2 h-2 bg-gray-400 rounded-full" />
         </div>
       </div>
     </div>

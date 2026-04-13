@@ -19,8 +19,8 @@ function App() {
   }
 
   return (
-    <AspectRatioContainer targetWidth={1280} targetHeight={800} aspectRatio="16/10">
-      <div className="w-full h-full bg-white overflow-hidden select-none relative shadow-xl">
+    <AspectRatioContainer targetWidth={1280} targetHeight={800}>
+      <div className="w-full h-full bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl overflow-hidden select-none relative">
         <motion.div
           className="relative w-full h-full"
           drag="x"
@@ -38,9 +38,9 @@ function App() {
           </div>
         </motion.div>
         {/* 页面指示器 */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-          <div className={`w-2 h-2 rounded-full ${page === 0 ? 'bg-blue-500' : 'bg-gray-300'}`} />
-          <div className={`w-2 h-2 rounded-full ${page === 1 ? 'bg-blue-500' : 'bg-gray-300'}`} />
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-10">
+          <div className={`w-2.5 h-2.5 rounded-full ${page === 0 ? 'bg-blue-500' : 'bg-gray-300'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${page === 1 ? 'bg-blue-500' : 'bg-gray-300'}`} />
         </div>
       </div>
     </AspectRatioContainer>
