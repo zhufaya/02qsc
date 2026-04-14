@@ -86,6 +86,7 @@ class QSysTcpClient:
                 if not raw:
                     continue
                 message = json.loads(raw.decode("utf-8", errors="replace"))
+                logger.info("【Q-SYS 硬件返回】: %s", message)
                 for listener in self._listeners:
                     asyncio.create_task(self._run_listener(listener, message))
             except Exception:

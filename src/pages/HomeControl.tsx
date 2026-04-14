@@ -26,13 +26,13 @@ const HomeControl = () => {
   const handleRecordToggle = async () => {
     const newState = !isRecording
 
-    // 调用后端 API（模拟）
+    // 调用真实后端 API，等待硬件响应
     try {
       const endpoint = newState ? `${API_BASE_URL}/api/record/start` : `${API_BASE_URL}/api/record/stop`
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ timestamp: Date.now() }),
+        // 注意：这里去掉了后端的 start/stop 接口不需要的 body 参数，防止后端报错
       })
       if (response.ok) {
         setIsRecording(newState)
