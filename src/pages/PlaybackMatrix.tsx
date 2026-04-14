@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Pause, Square, Rewind, FastForward, HardDrive } from 'lucide-react'
+import { Play, Pause, Square, Rewind, FastForward, HardDrive, DownloadCloud, AlertCircle } from 'lucide-react'
 
 const API_BASE_URL = 'http://localhost:8000'
 
 const PlaybackMatrix = () => {
   const [recordings, setRecordings] = useState<any[]>([])
   
+  // 初始化时优先读取本地存储，解决切页丢失问题
   const [currentTrack, setCurrentTrack] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('qsys_last_track');
@@ -25,12 +26,13 @@ const PlaybackMatrix = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
   
+  // 【新增】：磁盘空间监控与导出状态
+  const [diskSpace, setDiskSpace] = useState({ used_percent: 0, status_text: '计算中...' });
+  const [isExporting, setIsExporting] = useState(false);
+  
   const latestDragRef = useRef(0);
   const ignoreServerUntil = useRef<number>(0);
   const actionLock = useRef(false);
-  
-  // 【核心修复 1】：创建一个引用，用来直接操控底层的 input DOM 元素
-  const rangeInputRef = useRef<HTMLInputElement>(null);
 
   const formatSecs = (s: number) => {
     if (!s || isNaN(s) || s < 0) return "00:00";
@@ -59,6 +61,11 @@ const PlaybackMatrix = () => {
             setDroppedFile(data.files[0].filename);
           }
         }
+        
+        // 如果后端在 files 接口里返回了磁盘状态
+        if (data.disk_space) {
+          setDiskSpace(data.disk_space);
+        }
       })
       .catch(err => console.error("加载失败:", err));
       
@@ -76,6 +83,14 @@ const PlaybackMatrix = () => {
         }
         
         if (!actionLock.current) setIsPlaying(data.is_playing);
+
+        // 【新增】：实时更新磁盘使用率 (需要后端返回 disk_percent)
+        if (data.disk_percent !== undefined) {
+          setDiskSpace({ 
+              used_percent: data.disk_percent, 
+              status_text: `已用空间: ${data.disk_percent}%` 
+          });
+        }
       } catch (e) {}
     }, 200);
     return () => clearInterval(timer);
@@ -87,9 +102,28 @@ const PlaybackMatrix = () => {
   let progressPercent = (currentRenderVal / currentTotalSecs) * 100;
   progressPercent = Math.min(100, Math.max(0, progressPercent));
 
+  // 【新增】：导出音频到本地的函数
+  const handleExportFiles = async () => {
+    setIsExporting(true);
+    try {
+      // 调用 Python 后端的导出接口
+      const res = await fetch(`${API_BASE_URL}/api/backup`, { method: 'POST' });
+      const data = await res.json();
+      
+      if (data.success) {
+          alert(`✅ 导出成功！音频已备份至: ${data.save_path}`);
+      } else {
+          alert(`❌ 导出失败: ${data.error}`);
+      }
+    } catch (e) {
+      alert("网络错误，无法连接到导出服务");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleLoadTrack = async (index: number) => {
     if (!recordings[index]) return;
-    
     setCurrentTrack(index);
     setDroppedFile(recordings[index].filename);
     
@@ -147,25 +181,47 @@ const PlaybackMatrix = () => {
     handleCustomControl('integer.1', Math.round(targetSec));
   };
 
-  const finishDrag = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    const targetSec = latestDragRef.current;
-    setPlayerStatus(prev => ({...prev, current_sec: targetSec}));
-    handleCustomControl('integer.1', Math.round(targetSec));
-    
-    ignoreServerUntil.current = Date.now() + 1500;
-    setIsDragging(false);
-
-    // 【核心修复 2】：绝杀！在松开手指的瞬间，用代码模拟“点击空白处”，强制剥夺进度条的焦点
-    if (rangeInputRef.current) {
-      rangeInputRef.current.blur();
-    }
-  };
+  // 超过 80% 容量判定为报警状态
+  const isStorageWarning = diskSpace.used_percent > 80;
 
   return (
-    <div className="w-full h-full bg-slate-50 p-6 flex flex-col overflow-hidden select-none overscroll-none">
-      <div className="mb-4 font-bold text-blue-600 flex items-center gap-2">
-        <HardDrive size={20} /> Q-SYS 录音回放矩阵
+    <div className="w-full h-full bg-slate-50 p-6 flex flex-col overflow-hidden select-none">
+      
+      {/* 【更新】：头部加入存储监控与导出按钮 */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="font-bold text-blue-600 flex items-center gap-2 text-lg">
+          <HardDrive size={22} /> Q-SYS 录音回放矩阵
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end">
+            <span className={`text-xs font-bold ${isStorageWarning ? 'text-red-500' : 'text-slate-500'}`}>
+              {diskSpace.status_text}
+            </span>
+            <div className="w-32 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${isStorageWarning ? 'bg-red-500' : 'bg-blue-500'}`}
+                style={{ width: `${diskSpace.used_percent}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <button
+            onClick={handleExportFiles}
+            disabled={isExporting}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+              isExporting 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : isStorageWarning 
+                  ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+            }`}
+          >
+            {isStorageWarning && !isExporting && <AlertCircle size={16} />}
+            <DownloadCloud size={16} className={isExporting ? 'animate-bounce' : ''} />
+            {isExporting ? '正在导出...' : '导出至本地'}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto mb-4 custom-scrollbar">
@@ -217,38 +273,40 @@ const PlaybackMatrix = () => {
               {formatSecs(currentRenderVal)}
             </span>
             
-            <div 
-              className="flex-1 flex items-center py-4" 
-              style={{ touchAction: 'none' }}
-              onTouchMove={e => e.stopPropagation()}
-              onPointerMove={e => e.stopPropagation()}
-            >
+            {/* 【极简防滑方案】：纯净拦截 */}
+            <div className="flex-1 flex items-center swiper-no-swiping" style={{ touchAction: 'pan-y' }}>
               <input
-                ref={rangeInputRef} // 【绑定引用】将 DOM 元素绑定到我们的 ref 上
                 type="range" 
                 min="0" 
                 max={currentTotalSecs} 
                 step="0.1" 
                 value={currentRenderVal} 
-                draggable={false}
-                onDragStart={e => e.preventDefault()}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
+                
+                // 只做最基础的冒泡拦截，绝不动 preventDefault
+                onTouchStart={e => e.stopPropagation()}
+                onTouchMove={e => e.stopPropagation()}
+                
+                onPointerDown={() => {
                   setIsDragging(true);
                   ignoreServerUntil.current = Date.now() + 5000;
-                  setDragValue(parseFloat(e.currentTarget.value));
                 }}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value);
                   setDragValue(val);
                   latestDragRef.current = val;
                 }}
-                onPointerUp={finishDrag}
-                onTouchEnd={finishDrag}
-                className="w-full h-1.5 rounded-full appearance-none bg-gray-100 outline-none cursor-pointer touch-none overscroll-none"
+                onPointerUp={() => {
+                  const targetSec = latestDragRef.current;
+                  setPlayerStatus(prev => ({...prev, current_sec: targetSec}));
+                  handleCustomControl('integer.1', Math.round(targetSec));
+                  ignoreServerUntil.current = Date.now() + 1500;
+                  setIsDragging(false);
+                }}
+                // pan-y 是最关键的魔法：允许该元素上下滚动，但彻底吃掉它的左右滑动惯性！
+                className="w-full h-1.5 rounded-full appearance-none bg-gray-100 outline-none cursor-pointer swiper-no-swiping"
                 style={{ 
                   background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${progressPercent}%, #f1f5f9 ${progressPercent}%, #f1f5f9 100%)`,
-                  touchAction: 'none'
+                  touchAction: 'pan-y'
                 }}
               />
             </div>
@@ -262,22 +320,22 @@ const PlaybackMatrix = () => {
             <Rewind 
               size={24} 
               className="text-blue-600 cursor-pointer active:scale-90 active:text-blue-800 transition-transform" 
-              onClick={(e) => { e.stopPropagation(); handleAbsoluteSkip(-5); }}
+              onClick={() => handleAbsoluteSkip(-5)}
             />
             
             <div 
               className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors"
-              onClick={(e) => { e.stopPropagation(); handlePlayToggle(); }}
+              onClick={handlePlayToggle}
             >
               {isPlaying ? <Pause size={28} /> : <Play size={28} />}
             </div>
             
-            <Square size={20} className="text-gray-300 cursor-pointer hover:text-red-500" onClick={(e) => { e.stopPropagation(); handleStop(); }} />
+            <Square size={20} className="text-gray-300 cursor-pointer hover:text-red-500" onClick={handleStop} />
             
             <FastForward 
               size={24} 
               className="text-blue-600 cursor-pointer active:scale-90 active:text-blue-800 transition-transform"
-              onClick={(e) => { e.stopPropagation(); handleAbsoluteSkip(5); }}
+              onClick={() => handleAbsoluteSkip(5)}
             />
           </div>
         </div>
